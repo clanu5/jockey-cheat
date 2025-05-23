@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Scramble Botu - Grup Mesajı Testi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f7f9fb;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 540px;
+      margin: 32px auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+      padding: 2.5em 2em 2em 2em;
+    }
+    h2 {
+      text-align: center;
+      color: #2471A3;
+      margin-bottom: 1.2em;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    #status span {
+      font-weight: bold;
+    }
+    label {
+      color: #444;
+      font-weight: 500;
+      margin-right: 10px;
+    }
+    input[type="text"], input[type="number"] {
+      border: 1px solid #d1dbe6;
+      border-radius: 6px;
+      padding: 0.5em 0.75em;
+      font-size: 1em;
+      margin-right: 0.6em;
+      outline: none;
+      transition: border .2s;
+      background: #f9fbfd;
+    }
+    input[type="text"]:focus, input[type="number"]:focus {
+      border-color: #2471A3;
+      background: #fff;
+    }
+    button {
+      background: linear-gradient(90deg, #2471A3 60%, #00b894 100%);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.5em 1.1em;
+      font-size: 1em;
+      cursor: pointer;
+      font-weight: 500;
+      margin-right: 0.5em;
+      box-shadow: 0 2px 12px rgba(36,113,163,0.06);
+      transition: background .18s;
+    }
+    button:disabled {
+      background: #d2dae2;
+      color: #aaa;
+      cursor: not-allowed;
+    }
+    #log {
+      background: #f3f8fa;
+      border-radius: 8px;
+      padding: 1em;
+      height: 280px;
+      overflow-y: auto;
+      margin-top: 1.2em;
+      font-size: 0.98em;
+      color: #222;
+      box-shadow: 0 0 4px #e3e9ef;
+    }
+    .flex-row {
+      display: flex;
+      align-items: center;
+      gap: 0.7em;
+      margin-bottom: 0.7em;
+    }
+    .planli-wrap {
+      background: #eaf6fb;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(36,113,163,0.08);
+      padding: 1.1em 1em 1.2em 1em;
+      margin-bottom: 1.4em;
+      margin-top: 1em;
+      border-left: 6px solid #2471A3;
+    }
+    .planli-head {
+      color: #2471A3;
+      font-weight: 600;
+      font-size: 1.1em;
+      margin-bottom: 0.7em;
+      letter-spacing: 0.5px;
+    }
+    #planliDurum {
+      color: #009432;
+      margin-top: 0.5em;
+      font-weight: 500;
+      min-height: 1.1em;
+    }
+    @media (max-width: 600px) {
+      .container {padding: 1em;}
+      #log {height: 180px;}
+      .flex-row {flex-direction: column; align-items: stretch;}
+      button, input {width: 100%; margin-bottom: 0.3em;}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Scramble Botu (Grup Mesaj Testi)</h2>
+    <div id="status" style="margin-bottom:1.2em;">Durum: <span style="color:red;">Bağlı değil</span></div>
+    <div class="flex-row" style="margin-bottom:0.7em;">
+      <label>Token:</label>
+      <input type="text" id="token" size="28" placeholder="Bot Token">
+      <label>Grup ID:</label>
+      <input type="number" id="groupId" value="81843338" style="width:110px;">
+      <button id="connectBtn">Bağlan / Kes</button>
+    </div>
+
+    <!-- Planlı Mesaj Alanı -->
+    <div class="planli-wrap">
+      <div class="planli-head">Planlı Mesaj</div>
+      <div class="flex-row">
+        <input type="text" id="planliMesajInput" placeholder="Planlanan mesajı yazın" size="24">
+        <button id="planliTestBtn" title="Mesajı grupta hemen dene">Test Et</button>
+      </div>
+      <div class="flex-row">
+        <input type="number" id="planliSureInput" min="1" placeholder="Kaç dakika sonra?" style="width:120px;">
+        <input type="number" id="planliKacKezInput" min="1" value="1" placeholder="Kaç kez?" style="width:90px;">
+        <button id="planliSayaçBtn" disabled style="background:#b2bec3;color:#222;">Kalan: --:--</button>
+        <button id="planliBaslatBtn">Planla & Başlat</button>
+        <button id="planliIptalBtn" style="display:none;background:#d63031;">İptal</button>
+      </div>
+      <div id="planliDurum"></div>
+    </div>
+
+    <button id="testSendBtn" disabled style="margin-bottom:0.5em;">Test Mesajı Gönder</button>
+    <div id="log"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@3.0.0/dist/socket.io.min.js"></script>
+  <script>
+    function log(msg) {
+      const logDiv = document.getElementById('log');
+      logDiv.innerHTML += msg + "<br>";
+      logDiv.scrollTop = logDiv.scrollHeight;
+      console.log(msg.replace(/<[^>]*>?/gm, ''));
+    }
+    function setStatus(msg, ok) {
+      document.getElementById('status').innerHTML = `Durum: <span style="color:${ok?'green':'red'};">${msg}</span>`;
+    }
+
+    let socket = null;
+    let targetGroupId = 81843338;
+    let isListening = false;
+
+    function sendGroupMessage(targetId, content) {
+      if (!socket || !socket.connected) {
+        log("❌ Bağlı değil!");
+        return;
+      }
+      let packet1 = {
+        body: {
+          recipient: targetId,
+          isGroup: true,
+          mimeType: "text/plain",
+          data: new TextEncoder().encode(content).buffer,
+          flightId: Math.random().toString(36).slice(2)
+        }
+      };
+      let packet2 = {
+        body: {
+          groupId: targetId,
+          isGroup: true,
+          mimeType: "text/plain",
+          data: new TextEncoder().encode(content).buffer,
+          flightId: Math.random().toString(36).slice(2)
+        }
+      };
+      try {
+        socket.emit('message send', packet1);
+        log(`<b>Gönderildi (recipient):</b> ${content}`);
+      } catch (err) {
+        log(`<b>Hata (recipient):</b> ${err}`);
+      }
+      try {
+        socket.emit('message send', packet2);
+        log(`<b>Gönderildi (groupId):</b> ${content}`);
+      } catch (err) {
+        log(`<b>Hata (groupId):</b> ${err}`);
+      }
+    }
+
+    document.getElementById('connectBtn').onclick = function () {
+      const token = document.getElementById('token').value.trim();
+      targetGroupId = Number(document.getElementById('groupId').value);
+      if (!token) return alert("Token giriniz!");
+
+      if (socket && socket.connected) {
+        socket.disconnect();
+        setStatus("Bağlı değil", false);
+        log("<b>Bağlantı kesildi.</b>");
+        document.getElementById('testSendBtn').disabled = true;
+        return;
+      }
+
+      socket = io("wss://v3.palringo.com", {
+        path: "/socket.io",
+        transports: ["websocket"],
+        query: {
+          token: token,
+          device: "web"
+        }
+      });
+
+      socket.on("connect", () => {
+        setStatus("Bağlandı!", true);
+        log("<b>✅ Bağlandı!</b> Socket ID: " + socket.id);
+        document.getElementById('testSendBtn').disabled = false;
+        if (!isListening) {
+          botListener();
+          isListening = true;
+        }
+      });
+
+      socket.on("disconnect", () => {
+        setStatus("Bağlı değil", false);
+        log("<b>❌ Bağlantı koptu.</b>");
+        document.getElementById('testSendBtn').disabled = true;
+      });
+
+      log("<b>Bağlanıyor...</b>");
+    };
+
+    document.getElementById('testSendBtn').onclick = function () {
+      sendGroupMessage(targetGroupId, "Merhaba! (Test Mesajı)");
+    };
+
+    function botListener() {
+      ['message send', 'message receive', 'message'].forEach(eventName => {
+        socket.on(eventName, function (data) {
+          let message = data.body || data;
+          let msgText = "";
+          try {
+            if (message.data) {
+              msgText = new TextDecoder().decode(message.data).trim();
+            } else if (message.text) {
+              msgText = message.text.trim();
+            } else {
+              msgText = JSON.stringify(message);
+            }
+          } catch {
+            msgText = "";
+          }
+          log(`<span style="color:gray;">[${eventName}]</span> <b>${message.originator || ''}</b>: ${msgText}`);
+        });
+      });
+    }
+
+    // PLANLI MESAJ SEKMESİ KODLARI
+    let planliTimer = null;
+    let planliKalan = 0;
+    let planliInterval = null;
+    let planliKacKez = 1;
+    let planliGonderilen = 0;
+    let planliSure = 1;
+    let planliMesaj = "";
+
+    function planliSayaçGuncelle() {
+      const btn = document.getElementById('planliSayaçBtn');
+      if (planliKalan > 0) {
+        let dk = Math.floor(planliKalan / 60);
+        let sn = planliKalan % 60;
+        btn.innerText = `Kalan: ${dk.toString().padStart(2,'0')}:${sn.toString().padStart(2,'0')}`;
+        btn.disabled = false;
+      } else {
+        btn.innerText = "Kalan: --:--";
+        btn.disabled = true;
+      }
+    }
+
+    document.getElementById('planliTestBtn').onclick = function() {
+      const mesaj = document.getElementById('planliMesajInput').value.trim();
+      if (!mesaj) return alert("Mesaj giriniz!");
+      sendGroupMessage(targetGroupId, mesaj + " (Test)");
+      document.getElementById('planliDurum').innerText = "Test mesajı gönderildi!";
+      setTimeout(()=>{document.getElementById('planliDurum').innerText="";}, 2000);
+    };
+
+    document.getElementById('planliBaslatBtn').onclick = function() {
+      planliMesaj = document.getElementById('planliMesajInput').value.trim();
+      planliSure = Number(document.getElementById('planliSureInput').value);
+      planliKacKez = Number(document.getElementById('planliKacKezInput').value);
+
+      if (!planliMesaj) return alert("Planlı mesaj giriniz!");
+      if (!planliSure || planliSure<1) return alert("Geçerli süre giriniz!");
+      if (!planliKacKez || planliKacKez<1) return alert("Kaç kez gönderileceğini giriniz!");
+
+      document.getElementById('planliBaslatBtn').disabled = true;
+      document.getElementById('planliIptalBtn').style.display = "";
+      document.getElementById('planliDurum').innerText = "Planlama başladı...";
+      planliGonderilen = 0;
+      planliKalan = planliSure * 60;
+      planliSayaçGuncelle();
+
+      planliInterval = setInterval(() => {
+        planliKalan--;
+        planliSayaçGuncelle();
+        if (planliKalan <= 0) {
+          clearInterval(planliInterval);
+          planliInterval = null;
+        }
+      }, 1000);
+
+      planliTimer = setTimeout(planliMesajGonder, planliSure * 60 * 1000);
+    };
+
+    function planliMesajGonder() {
+      sendGroupMessage(targetGroupId, planliMesaj);
+      planliGonderilen++;
+      document.getElementById('planliDurum').innerText = `✅ Mesaj gönderildi! (${planliGonderilen}/${planliKacKez})`;
+      if (planliGonderilen < planliKacKez) {
+        planliKalan = planliSure * 60;
+        planliSayaçGuncelle();
+        planliInterval = setInterval(() => {
+          planliKalan--;
+          planliSayaçGuncelle();
+          if (planliKalan <= 0) {
+            clearInterval(planliInterval);
+            planliInterval = null;
+          }
+        }, 1000);
+        planliTimer = setTimeout(planliMesajGonder, planliSure * 60 * 1000);
+      } else {
+        document.getElementById('planliBaslatBtn').disabled = false;
+        document.getElementById('planliIptalBtn').style.display = "none";
+        planliKalan = 0;
+        planliSayaçGuncelle();
+        if (planliInterval) clearInterval(planliInterval);
+      }
+    }
+
+    document.getElementById('planliIptalBtn').onclick = function() {
+      if (planliTimer) clearTimeout(planliTimer);
+      if (planliInterval) clearInterval(planliInterval);
+      planliTimer = null;
+      planliInterval = null;
+      planliKalan = 0;
+      planliSayaçGuncelle();
+      document.getElementById('planliBaslatBtn').disabled = false;
+      document.getElementById('planliIptalBtn').style.display = "none";
+      document.getElementById('planliDurum').innerText = "Planlama iptal edildi.";
+      setTimeout(()=>{document.getElementById('planliDurum').innerText="";}, 2000);
+    };
+  </script>
+</body>
+</html>
