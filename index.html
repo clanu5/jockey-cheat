@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Scramble Botu - Grup Mesajı Testi</title>
+  <title>palringo - Grup Mesajı </title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
@@ -115,7 +115,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>Scramble Botu (Grup Mesaj Testi)</h2>
+    <h2>(Grup Mesaj Testi)</h2>
     <div id="status" style="margin-bottom:1.2em;">Durum: <span style="color:red;">Bağlı değil</span></div>
     <div class="flex-row" style="margin-bottom:0.7em;">
       <label>Token:</label>
@@ -134,7 +134,7 @@
       </div>
       <div class="flex-row">
         <input type="number" id="planliSureInput" min="1" placeholder="Kaç dakika sonra?" style="width:120px;">
-        <input type="number" id="planliKacKezInput" min="1" value="1" placeholder="Kaç kez?" style="width:90px;">
+        <input type="number" id="planliKacKezInput" min="1" value="kaç kez komut göndersin" placeholder="Kaç kez?" style="width:90px;">
         <button id="planliSayaçBtn" disabled style="background:#b2bec3;color:#222;">Kalan: --:--</button>
         <button id="planliBaslatBtn">Planla & Başlat</button>
         <button id="planliIptalBtn" style="display:none;background:#d63031;">İptal</button>
@@ -159,7 +159,7 @@
     }
 
     let socket = null;
-    let targetGroupId = 81843338;
+    let targetGroupId = grup idi;
     let isListening = false;
 
     function sendGroupMessage(targetId, content) {
