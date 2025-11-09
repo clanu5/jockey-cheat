@@ -1,24 +1,24 @@
 // === Wordlist işlemleri ===
 let wordList = [];
 
-function yasuo() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.txt';
-  input.onchange = e => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = event => {
-      wordList = event.target.result
-        .split('\n')
-        .map(w => w.trim().toLowerCase())
-        .filter(w => w.length === 5);
-      console.log(`✅ ${wordList.length} kelime yüklendi!`);
-    };
-    reader.readAsText(file);
-  };
-  input.click();
+async function yasuo() {
+  try {
+    const response = await fetch('https://raw.githubusercontent.com/clanu5/jockey-cheat/refs/heads/main/5.txt');
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+
+    const text = await response.text();
+    wordList = text
+      .split('\n')
+      .map(w => w.trim().toLowerCase())
+      .filter(w => w.length === 5);
+
+    console.log(`✅ ${wordList.length} kelime yüklendi!`);
+  } catch (err) {
+    console.error("❌ Wordlist yüklenemedi:", err);
+  }
 }
+
+yasuo(); // Başlangıçta kelime listesini yükle
 
 // === Wordle çözüm fonksiyonları ===
 function parseGameBoardFromHTML(html) {
@@ -208,7 +208,7 @@ if (!isListening) {
         }
 
         // Kanal hiç bilemedi
-        if (text.includes("game over") && text.includes("the channel failed to guess")) {1
+        if (text.includes("game over") && text.includes("the channel failed to guess")) {
           console.log("💀 Kimse bilemedi. 2 saniye sonra '!wo' gönderiliyor.");
           await delay(2000);
           sendGroupMessage(targetGroupId, "!wo");
