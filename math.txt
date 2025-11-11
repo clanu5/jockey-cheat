@@ -1,0 +1,80 @@
+let client = PalringoWebConnection; // Sayfadaki bağlantı değişkenini al
+let lastFishTimestamp = Date.now(); // 10 saniyeden önce tekrar fish yapmamak için bu değişkeni kullanacağız
+
+function findMathOperation(text) {
+  // Metindeki "Solve:" ifadesini bulup işlemi alıyoruz
+  let match = text.match(/Solve:\s*(.*)/);
+  if (match) {
+    let operationText = match[1];
+    // Boşlukları ve istenmeyen karakterleri temizle
+    operationText = operationText.replace(/[^\d()+\-*/.\s×]/g, '');
+    // × işaretini * ile değiştir
+    operationText = operationText.replace(/×/g, '*');
+    // Boşlukları sil
+    operationText = operationText.replace(/\s+/g, '');
+    // Matematiksel işlemi döndür
+    try {
+      return eval(operationText);
+    } catch {
+      return null;
+    }
+  } else {
+    return null;
+  }
+}
+
+// Temel mesaj gönderici komutu tanımlıyoruz
+let _sendMessage = (targetId, content, isGroup) => {
+  let packet = {
+    body: {
+      recipient: targetId,
+      isGroup: isGroup,
+      mimeType: 'text/plain',
+      data: new TextEncoder().encode(String(content)).buffer,
+      flightId: Math.random().toString(36).substring(7),
+      metadata: undefined,
+      embeds: undefined,
+    },
+  };
+  return client.socket.emit('message send', packet);
+};
+
+// Odaya mesaj gönder
+let sendGroupMessage = (targetId, content) => _sendMessage(targetId, content, true);
+// Özele mesaj gönder - Lazım olursa diye
+let sendPrivateMessage = (targetId, content) => _sendMessage(targetId, content, false);
+
+// Mesaj gittiğinde veya geldiğinde
+client.socket.on('message send', async function (data) {
+  let message = data.body;
+
+  // Mesajın şifrelemesini aç
+  message.text = new TextDecoder().decode(message.data);
+
+  // --------------------------------------------
+  // FISH
+  // --------------------------------------------
+  if (message.recipient === targetGroupId && message.originator === 36828201 && message.text.includes('Solve')) {
+    console.warn('Fish doldu', message.recipient);
+
+    let elapsedTime = Date.now() - lastFishTimestamp;
+    let requiredElapsedTime = 1000; // 1 saniye aralık
+
+    const sendSolveAnswer = () => {
+      let botCommand = findMathOperation(message.text);
+      if (botCommand !== null) {
+        console.warn('Fishleniyor... Gönderilen cevap:', botCommand);
+        sendGroupMessage(targetGroupId, botCommand);
+        lastFishTimestamp = Date.now();
+      } else {
+        console.warn('Matematik işlemi bulunamadı.');
+      }
+    };
+
+    if (elapsedTime > requiredElapsedTime) {
+      setTimeout(sendSolveAnswer, 2000);
+    } else {
+      setTimeout(sendSolveAnswer, requiredElapsedTime - elapsedTime + 2000);
+    }
+  }
+});
