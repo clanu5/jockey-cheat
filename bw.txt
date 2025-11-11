@@ -37,7 +37,7 @@ client.socket.on('message send', async function (data) {
   if (message.recipient === targetGroupId && message.originator === 75423789 && message.text.includes('|-->')) {
     console.warn('Fish doldu', message.recipient);
 
-    let requiredElapsedTime = 2; // Komutlar arasında beklenecek süre
+    
     if (fishCount === 10) { // Eğer 10 kez olduysa
       fishCount = 0; // Sayacı sıfırla
       console.warn('10 kez fishlendi, 20 saniye bekleniyor...');
@@ -49,7 +49,7 @@ client.socket.on('message send', async function (data) {
       console.warn('Fishleniyor...');
       setTimeout(() => {
         sendGroupMessage(targetGroupId, reversedBotCommand);
-      }, requiredElapsedTime);
+      });
     }
 
     fishCount++; // Fish sayacını artır
