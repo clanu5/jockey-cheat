@@ -1,3 +1,4 @@
+
 let client = PalringoWebConnection; // Sayfadaki bağlantı değişkenini al
 let fishCount = 0; // Fish sayacı
 
@@ -25,21 +26,21 @@ let sendPrivateMessage = (targetId, content) => _sendMessage(targetId, content, 
 // Mesaj gittiğinde veya geldiğinde
 client.socket.on('message send', async function (data) {
   let message = data.body;
-
+  
   // Mesajın şifrelemesini aç
   message.text = new TextDecoder().decode(message.data);
   const botCommand = message.text.replace(/\|--> (.*) <--\|/g, "$1");
   const reversedBotCommand = botCommand.split('').reverse().join('');
-
   // --------------------------------------------
   // FISH
   // --------------------------------------------
+  // Mesajı gönderen Fishing Botu ise VE mesajın metni içinde REFILL resminin adresi varsa
   if (message.recipient === targetGroupId && message.originator === 75423789 && message.text.includes('|-->')) {
     console.warn('Fish doldu', message.recipient);
-
-    if (fishCount === 10) { // Eğer 10 kez olduysa
+    let requiredElapsedTime = 2 * 1000; // Komutlar arasında beklenecek süre
+    if (fishCount === 10) { // Eğer 20'ye ulaştıysa
       fishCount = 0; // Sayacı sıfırla
-      console.warn('10 kez fishlendi, 20 saniye bekleniyor...');
+      console.warn('20 kez fishlendi, 20 saniye bekleniyor...');
       setTimeout(() => {
         console.warn('20 saniye bekledi, reverse komutu çalıştırılıyor...');
         sendGroupMessage(targetGroupId, reversedBotCommand);
@@ -47,10 +48,16 @@ client.socket.on('message send', async function (data) {
     } else {
       console.warn('Fishleniyor...');
       setTimeout(() => {
+        console.warn('Fishleniyor...');
         sendGroupMessage(targetGroupId, reversedBotCommand);
-      });
+      }, 1);
     }
 
     fishCount++; // Fish sayacını artır
   }
+
+  // Gönderilecek komut
+  // --------------------------------------------
+  // FISH
+  // --------------------------------------------
 });
