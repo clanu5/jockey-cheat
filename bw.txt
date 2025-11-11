@@ -1,0 +1,56 @@
+let client = PalringoWebConnection; // Sayfadaki bağlantı değişkenini al
+let fishCount = 0; // Fish sayacı
+
+// Temel mesaj gönderici komutu tanımlıyoruz
+let _sendMessage = (targetId, content, isGroup) => {
+  let packet = {
+    "body": {
+      recipient: targetId,
+      isGroup: isGroup,
+      mimeType: 'text/plain',
+      data: new TextEncoder().encode(content).buffer,
+      flightId: Math.random().toString(36).substring(7),
+      metadata: undefined,
+      embeds: undefined,
+    }
+  }
+  return client.socket.emit('message send', packet);
+};
+
+// Odaya mesaj gönder
+let sendGroupMessage = (targetId, content) => _sendMessage(targetId, content, true);
+// Özele mesaj gönder - Lazım olursa diye
+let sendPrivateMessage = (targetId, content) => _sendMessage(targetId, content, false);
+
+// Mesaj gittiğinde veya geldiğinde
+client.socket.on('message send', async function (data) {
+  let message = data.body;
+
+  // Mesajın şifrelemesini aç
+  message.text = new TextDecoder().decode(message.data);
+  const botCommand = message.text.replace(/\|--> (.*) <--\|/g, "$1");
+  const reversedBotCommand = botCommand.split('').reverse().join('');
+
+  // --------------------------------------------
+  // FISH
+  // --------------------------------------------
+  if (message.recipient === targetGroupId && message.originator === 75423789 && message.text.includes('|-->')) {
+    console.warn('Fish doldu', message.recipient);
+
+    if (fishCount === 10) { // Eğer 10 kez olduysa
+      fishCount = 0; // Sayacı sıfırla
+      console.warn('10 kez fishlendi, 20 saniye bekleniyor...');
+      setTimeout(() => {
+        console.warn('20 saniye bekledi, reverse komutu çalıştırılıyor...');
+        sendGroupMessage(targetGroupId, reversedBotCommand);
+      }, 20000); // 20 saniye bekle
+    } else {
+      console.warn('Fishleniyor...');
+      setTimeout(() => {
+        sendGroupMessage(targetGroupId, reversedBotCommand);
+      });
+    }
+
+    fishCount++; // Fish sayacını artır
+  }
+});
