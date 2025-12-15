@@ -68,7 +68,7 @@ function filterPossibleWords(board, words) {
 }
 
 // === Bot ayarları ===
-let targetGroupId = 81814093;
+
 let client = PalringoWebConnection;
 let isListening = false;
 
@@ -251,5 +251,6 @@ if (!isListening) {
   resetNoMessageTimer();
   isListening = true;
 }
+
 
 
